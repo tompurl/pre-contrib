@@ -1,0 +1,94 @@
+#!/bin/sh
+
+############################################################################## 
+#
+# This is my attempt at creating an init script for carbon-cache.py. It is
+#>based on the hobbit init script in Ubuntu 10.04.
+#
+############################################################################## 
+
+### BEGIN INIT INFO
+# Provides:          carbon-cache
+# Required-Start:    $local_fs $remote_fs $network $syslog $named
+# Required-Stop:     $local_fs $remote_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts the Carbon listener that writes to Whisper db.
+### END INIT INFO
+
+GRAPHITE_HOME=/opt/graphite
+PIDFILE=/var/run/graphite/carbon-cache.pid
+DAEMON=$GRAPHITE_HOME/bin/carbon-cache.py
+PYTHON_PATH=$GRAPHITE_HOME/whisper
+CARBON_USER=www-data
+NAME="carbon-cache"
+DESC="Carbon-cache Listener"
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+   "start")
+
+	log_daemon_msg "Starting $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --chuid $CARBON_USER --umask 022 --start \
+		-- \
+                --chdir $GRAPHITE_HOME
+		--pidfile=$PIDFILE
+	log_end_msg $?
+	;;
+
+   "stop")
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	start-stop-daemon --exec $DAEMON --pidfile $PIDFILE --stop --retry 5
+	log_end_msg $?
+	;;
+
+   "status")
+	if test -s $PIDFILE
+	then
+		kill -0 `cat $PIDFILE`
+		if test $? -eq 0
+		then
+			echo "carbon-cache.py running with PID `cat $PIDFILE`"
+			exit 0
+		else
+			echo "carbon-cache.py is not running, removing stale PID file"
+			rm -f $PIDFILE
+			exit 1
+		fi
+	else
+		echo "carbon-cache.py does not appear to be running"
+		exit 3
+	fi
+	;;
+
+   "restart")
+	if test -s $PIDFILE
+	then
+		$0 stop
+		sleep 1
+		$0 start
+	else
+		log_action_msg "carbon-cache.py does not appear to be running, starting it"
+		$0 start
+	fi
+	;;
+
+   "reload"|"force-reload")
+	if test -s $PIDFILE
+	then
+		log_action_msg "Reloading carbon-cache config"
+		kill -HUP `cat $PIDFILE`
+	else
+		log_action_msg "carbon-cache.py is not running (no PID file)"
+	fi
+	;;
+   *)
+   	echo "Usage: $0 start|stop|restart|force-reload|reload|status"
+	break;
+esac
+
+exit 0
+
