@@ -20,23 +20,57 @@
 
 GRAPHITE_HOME=/opt/graphite
 PIDFILE=$GRAPHITE_HOME/storage/carbon-cache.pid
-DAEMON=$GRAPHITE_HOME/bin/carbon-cache.py
-PYTHON_PATH=$GRAPHITE_HOME/whisper
+#DAEMON=$GRAPHITE_HOME/bin/carbon-cache.py
+DAEMON=/usr/bin/python
+#PYTHON_PATH=$GRAPHITE_HOME/whisper
 CARBON_USER=www-data
 NAME="carbon-cache"
 DESC="Carbon-cache Listener"
+CC_SCRIPT=$GRAPHITE_HOME/bin/carbon-cache.py
+DAEMON_ARGS=$CC_SCRIPT
+DAEMON_ARGS="$DAEMON_ARGS --logdir=$GRAPHITE_HOME/storage/log/carbon-cache"
+DAEMON_ARGS="$DAEMON_ARGS --pidfile=$PIDFILE"
+DAEMON_ARGS="$DAEMON_ARGS start"
 
 test -x $DAEMON || exit 0
 
 . /lib/lsb/init-functions
 
+### Tests to see it the daemon is running
+# 0 => Running
+# 1 => Stale pidfile and dead process
+# 2 => Not running
+is_proc_up() {
+    retval=2
+    if test -s $PIDFILE
+    then
+        kill -0 `cat $PIDFILE`
+        if test $? -eq 0
+        then
+            retval=0
+        else
+            retval=1
+        fi
+    else
+        retval=2
+    fi
+    return $retval
+}
+
 case "$1" in
    "start")
+        #Delete PIDFILE if the process is dead
+        is_proc_up
+        if [ $? -eq 1 ]; then
+            log_daemon_msg "Deleting stale pid file" "$NAME"
+            rm $PIDFILE
+        fi
+
 	log_daemon_msg "Starting $DESC" "$NAME"
 	start-stop-daemon --exec $DAEMON --chuid $CARBON_USER --start \
 		--pidfile=$PIDFILE \
                 --chdir $GRAPHITE_HOME \
-                -- --logdir=$GRAPHITE_HOME/storage/log/carbon-cache --pidfile=$PIDFILE start
+                -- $DAEMON_ARGS
 	log_end_msg $?
 	;;
 
