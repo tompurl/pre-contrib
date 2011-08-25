@@ -20,9 +20,7 @@
 
 GRAPHITE_HOME=/opt/graphite
 PIDFILE=$GRAPHITE_HOME/storage/carbon-cache.pid
-#DAEMON=$GRAPHITE_HOME/bin/carbon-cache.py
 DAEMON=/usr/bin/python
-#PYTHON_PATH=$GRAPHITE_HOME/whisper
 CARBON_USER=www-data
 NAME="carbon-cache"
 DESC="Carbon-cache Listener"
@@ -79,6 +77,22 @@ case "$1" in
 	start-stop-daemon --pidfile $PIDFILE --stop --retry 5
 	log_end_msg $?
 	;;
+
+   "status2")
+        is_proc_up
+        retcode=$?
+        case "$retcode" in
+            0)
+                # TODO proc running
+                ;;
+            1)
+                # TODO stale pid
+                ;;
+            2)
+                # TODO dead process
+                ;;
+        esac
+        ;;
 
    "status")
         # FIXME
