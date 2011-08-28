@@ -9,7 +9,7 @@
 # Description:       See Short-Description
 ### END INIT INFO
 
-# Author: Tom Purl <tom@tompur.com>
+# Author: Tom Purl <tom@tompurl.com>
 
 # Do NOT "set -e"
 
@@ -120,19 +120,6 @@ do_stop()
 	return "$RETVAL"
 }
 
-#
-# Function that sends a SIGHUP to the daemon/service
-#
-do_reload() {
-	#
-	# If the daemon can reload its configuration without
-	# restarting (for example, when it is sent a SIGHUP),
-	# then implement that here.
-	#
-	start-stop-daemon --stop --signal 1 --quiet --pidfile $PIDFILE --name $NAME
-	return 0
-}
-
 case "$1" in
   start)
 	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
@@ -140,7 +127,7 @@ case "$1" in
 	case "$?" in
                 # TODO If the return code is 0, then print "service started" message
 		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
-                # TODO If the return code is 1, then print "service already started" message
+                # TODO If the return code is 0, then print "service started" message
 		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
 	esac
 	;;
@@ -153,19 +140,9 @@ case "$1" in
 	esac
 	;;
   status)
-       #status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
-       # FIXME
+       status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
        ;;
-  #reload|force-reload)
-	#
-	# If do_reload() is not implemented then leave this commented out
-	# and leave 'force-reload' as an alias for 'restart'.
-	#
-	#log_daemon_msg "Reloading $DESC" "$NAME"
-	#do_reload
-	#log_end_msg $?
-	#;;
-  restart|force-reload)
+  restart)
 	#
 	# If the "reload" option is implemented then remove the
 	# 'force-reload' alias
@@ -188,8 +165,7 @@ case "$1" in
 	esac
 	;;
   *)
-	#echo "Usage: $SCRIPTNAME {start|stop|restart|reload|force-reload}" >&2
-	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+	echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
 	exit 3
 	;;
 esac
